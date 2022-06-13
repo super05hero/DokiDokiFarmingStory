@@ -16,6 +16,16 @@ public class PinchZoom : MonoBehaviour
 
     Vector3 touchStart;
 
+    TouchMode touchMode;
+
+
+    enum TouchMode
+    {
+        SingleTouch = 1,
+        MultipleTouch = 2,
+    }
+
+
     private void Start()
     {
         camera = GetComponent<Camera>();
@@ -28,12 +38,31 @@ public class PinchZoom : MonoBehaviour
         if (Input.touchCount > 0)
         {
 
+            if (Input.touchCount == 1)
+            {
+                if (touchMode != TouchMode.SingleTouch) isPanning = false;
+                touchMode = TouchMode.SingleTouch;
+            }
+            else if (Input.touchCount >= 2)
+            {
+                if (touchMode != TouchMode.MultipleTouch) isPanning = false;
+                touchMode = TouchMode.MultipleTouch;
+            }
+
             if (!isPanning)
             {
                 isPanning = true;
-                touchStart = camera.ScreenToWorldPoint(Input.GetTouch(0).position);
+                if (touchMode == TouchMode.SingleTouch)
+                    touchStart = camera.ScreenToWorldPoint(Input.GetTouch(0).position);
+                else
+                    touchStart = camera.ScreenToWorldPoint(MiddlePoint(Input.GetTouch(0).position, Input.GetTouch(1).position));
             }
-            Vector3 diff = touchStart - camera.ScreenToWorldPoint(Input.GetTouch(0).position);
+
+            Vector3 diff;
+            if (Input.touchCount == 1)
+                diff = touchStart - camera.ScreenToWorldPoint(Input.GetTouch(0).position);
+            else
+                diff = touchStart - camera.ScreenToWorldPoint(MiddlePoint(Input.GetTouch(0).position, Input.GetTouch(1).position));
 
             camera.transform.position += diff;
 
@@ -55,7 +84,7 @@ public class PinchZoom : MonoBehaviour
                 {
                     camera.orthographicSize += deltaMagnitudeDiff * orthoZoomSpeed;
                     // Debug.Log(camera.orthographicSize);
-
+                    
                     camera.orthographicSize = Mathf.Clamp(camera.orthographicSize, MinFieldOfVision, MaxFieldOfVision);
 
                 }
@@ -65,5 +94,14 @@ public class PinchZoom : MonoBehaviour
         else isPanning = false;
     }
     
-   
+   Vector3 MiddlePoint(Vector3 vec1, Vector3 vec2)
+    {
+        return new Vector3((vec1.x + vec2.x) / 2, (vec1.y + vec2.y) / 2, (vec1.z + vec2.z) / 2);
+    }
+
+    Vector2 MiddlePoint(Vector2 vec1, Vector2 vec2)
+    {
+        return new Vector2((vec1.x + vec2.x) / 2, (vec1.y + vec2.y) / 2);
+    }
+
 }
